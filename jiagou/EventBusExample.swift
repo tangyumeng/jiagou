@@ -58,6 +58,11 @@ class EventBusExampleViewController: UIViewController {
     private let section3Label = UILabel()
     private let publishButton5 = UIButton(type: .system)
     
+    private let section4Label = UILabel()
+    private let publishButton6 = UIButton(type: .system)
+    private let publishButton7 = UIButton(type: .system)
+    private let subscribeButton1 = UIButton(type: .system)
+    
     private let clearLogButton = UIButton(type: .system)
     
     // MARK: - 生命周期
@@ -157,6 +162,36 @@ class EventBusExampleViewController: UIViewController {
         publishButton5.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(publishButton5)
         
+        // Section 4: 高级功能（优先级和粘性事件）
+        section4Label.text = "⭐ 高级功能"
+        section4Label.font = .boldSystemFont(ofSize: 16)
+        section4Label.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(section4Label)
+        
+        publishButton6.setTitle("测试：优先级（高→低）", for: .normal)
+        publishButton6.addTarget(self, action: #selector(testPriority), for: .touchUpInside)
+        publishButton6.backgroundColor = .systemIndigo
+        publishButton6.setTitleColor(.white, for: .normal)
+        publishButton6.layer.cornerRadius = 8
+        publishButton6.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(publishButton6)
+        
+        publishButton7.setTitle("发布：粘性事件", for: .normal)
+        publishButton7.addTarget(self, action: #selector(publishStickyEvent), for: .touchUpInside)
+        publishButton7.backgroundColor = .systemIndigo
+        publishButton7.setTitleColor(.white, for: .normal)
+        publishButton7.layer.cornerRadius = 8
+        publishButton7.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(publishButton7)
+        
+        subscribeButton1.setTitle("订阅：粘性事件（后订阅）", for: .normal)
+        subscribeButton1.addTarget(self, action: #selector(subscribeStickyEvent), for: .touchUpInside)
+        subscribeButton1.backgroundColor = .systemIndigo
+        subscribeButton1.setTitleColor(.white, for: .normal)
+        subscribeButton1.layer.cornerRadius = 8
+        subscribeButton1.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(subscribeButton1)
+        
         // 清除日志按钮
         clearLogButton.setTitle("清除日志", for: .normal)
         clearLogButton.addTarget(self, action: #selector(clearLog), for: .touchUpInside)
@@ -224,8 +259,27 @@ class EventBusExampleViewController: UIViewController {
             publishButton5.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             publishButton5.heightAnchor.constraint(equalToConstant: 44),
             
+            // Section 4
+            section4Label.topAnchor.constraint(equalTo: publishButton5.bottomAnchor, constant: 20),
+            section4Label.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            
+            publishButton6.topAnchor.constraint(equalTo: section4Label.bottomAnchor, constant: 12),
+            publishButton6.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            publishButton6.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            publishButton6.heightAnchor.constraint(equalToConstant: 44),
+            
+            publishButton7.topAnchor.constraint(equalTo: publishButton6.bottomAnchor, constant: 12),
+            publishButton7.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            publishButton7.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            publishButton7.heightAnchor.constraint(equalToConstant: 44),
+            
+            subscribeButton1.topAnchor.constraint(equalTo: publishButton7.bottomAnchor, constant: 12),
+            subscribeButton1.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            subscribeButton1.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            subscribeButton1.heightAnchor.constraint(equalToConstant: 44),
+            
             // 清除按钮
-            clearLogButton.topAnchor.constraint(equalTo: publishButton5.bottomAnchor, constant: 20),
+            clearLogButton.topAnchor.constraint(equalTo: subscribeButton1.bottomAnchor, constant: 20),
             clearLogButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             clearLogButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             clearLogButton.heightAnchor.constraint(equalToConstant: 44),
@@ -330,6 +384,70 @@ class EventBusExampleViewController: UIViewController {
         
         log("📤 发布：主题切换事件")
         EventBus.shared.post(event)
+    }
+    
+    @objc private func testPriority() {
+        log("📤 测试优先级功能...")
+        log("   订阅3个不同优先级的订阅者")
+        
+        // 创建临时订阅者（用不同优先级）
+        EventBus.shared.subscribe("PriorityTest", observer: self, priority: .critical) { [weak self] _ in
+            self?.log("   ⭐ 最高优先级收到")
+        }
+        
+        EventBus.shared.subscribe("PriorityTest", observer: self, priority: .low) { [weak self] _ in
+            self?.log("   📍 低优先级收到")
+        }
+        
+        EventBus.shared.subscribe("PriorityTest", observer: self, priority: .normal) { [weak self] _ in
+            self?.log("   📌 普通优先级收到")
+        }
+        
+        // 发布事件
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            struct PriorityTestEvent: Event {
+                var name: String { "PriorityTest" }
+            }
+            
+            self?.log("📣 发布测试事件...")
+            EventBus.shared.post(PriorityTestEvent())
+            
+            // 清理订阅
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                EventBus.shared.unsubscribe("PriorityTest", observer: self!)
+                self?.log("✅ 优先级测试完成")
+            }
+        }
+    }
+    
+    @objc private func publishStickyEvent() {
+        let event = OrderCreatedEvent(
+            orderId: "STICKY-\(Int.random(in: 1000...9999))",
+            amount: 999.99,
+            productName: "粘性事件测试商品"
+        )
+        
+        log("📤 发布粘性事件：\(event.orderId)")
+        log("   提示：点击下方按钮订阅，仍能收到此事件")
+        EventBus.shared.postSticky(event)
+    }
+    
+    @objc private func subscribeStickyEvent() {
+        log("📝 订阅粘性事件（后订阅）")
+        
+        // 使用一个临时的订阅者ID
+        let tempObserver = NSObject()
+        
+        EventBus.shared.subscribeSticky(OrderCreatedEvent.self, observer: tempObserver) { [weak self] event in
+            self?.log("📌 粘性订阅收到：\(event.orderId)")
+            self?.log("   商品：\(event.productName)")
+            self?.log("   证明：后订阅也能收到之前发布的事件！")
+        }
+        
+        // 延迟取消订阅（避免立即释放）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            EventBus.shared.unsubscribeAll(observer: tempObserver)
+        }
     }
     
     // MARK: - 辅助方法
