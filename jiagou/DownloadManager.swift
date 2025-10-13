@@ -54,6 +54,59 @@ class DownloadManager: NSObject {
         config.sessionSendsLaunchEvents = true
         
         session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
+        
+        // 恢复持久化的任务
+        restoreTasksFromPersistence()
+    }
+    
+    // MARK: - 持久化相关
+    
+    /// 从持久化存储恢复任务
+    private func restoreTasksFromPersistence() {
+        let taskDataArray = DownloadTaskPersistence.shared.loadTasks()
+        
+        guard !taskDataArray.isEmpty else { return }
+        
+        print("🔄 开始恢复 \(taskDataArray.count) 个任务...")
+        
+        taskQueue.async(flags: .barrier) { [weak self] in
+            guard let self = self else { return }
+            
+            for taskData in taskDataArray {
+                // 创建任务
+                let task = DownloadTask(from: taskData)
+                task.destinationPath = self.downloadDirectory.appendingPathComponent(task.fileName)
+                
+                // 添加到任务字典
+                self.tasks[task.id] = task
+                
+                // 如果是暂停状态且有 resumeData，保持暂停状态
+                // 如果是下载中状态，改为等待状态（需要用户手动恢复）
+                if task.state == .downloading {
+                    task.state = .waiting
+                }
+                
+                print("✅ 恢复任务：\(task.fileName) - \(task.stateDescription())")
+            }
+        }
+        
+        // 通知代理任务已恢复
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.notifyTasksRestored()
+        }
+    }
+    
+    /// 保存所有任务到持久化存储
+    private func saveTasksToPersistence() {
+        let allTasks = getAllTasks()
+        DownloadTaskPersistence.shared.saveTasks(allTasks)
+    }
+    
+    /// 通知任务已恢复（可供 delegate 实现）
+    private func notifyTasksRestored() {
+        // 这里可以添加代理方法通知 UI 刷新
+        print("📋 任务恢复完成")
     }
     
     // MARK: - 公共方法
@@ -66,6 +119,9 @@ class DownloadManager: NSObject {
         taskQueue.async(flags: .barrier) { [weak self] in
             self?.tasks[task.id] = task
         }
+        
+        // 持久化保存
+        saveTasksToPersistence()
         
         startNextTaskIfPossible()
         return task
@@ -113,6 +169,10 @@ class DownloadManager: NSObject {
             task.resumeData = resumeData
             task.state = .paused
             self.activeDownloadCount -= 1
+            
+            // 持久化保存（保存 resumeData）
+            self.saveTasksToPersistence()
+            
             self.startNextTaskIfPossible()
         })
     }
@@ -148,6 +208,9 @@ class DownloadManager: NSObject {
         taskQueue.async(flags: .barrier) { [weak self] in
             self?.tasks.removeValue(forKey: taskId)
         }
+        
+        // 从持久化存储中删除
+        DownloadTaskPersistence.shared.removeTask(withId: taskId)
     }
     
     /// 清除所有已完成的任务
@@ -157,6 +220,9 @@ class DownloadManager: NSObject {
             let completedTaskIds = self.tasks.filter { $0.value.state == .completed }.map { $0.key }
             completedTaskIds.forEach { self.tasks.removeValue(forKey: $0) }
         }
+        
+        // 清理持久化存储中的已完成任务
+        DownloadTaskPersistence.shared.clearCompletedTasks()
     }
     
     // MARK: - 私有方法
@@ -239,6 +305,10 @@ extension DownloadManager: URLSessionDownloadDelegate {
                     task.state = .completed
                     task.progress = 1.0
                     self.activeDownloadCount -= 1
+                    
+                    // 持久化保存完成状态
+                    self.saveTasksToPersistence()
+                    
                     self.delegate?.downloadManager(self, didCompleteTask: task)
                     self.startNextTaskIfPossible()
                 }
@@ -248,6 +318,10 @@ extension DownloadManager: URLSessionDownloadDelegate {
                     task.error = error
                     task.state = .failed
                     self.activeDownloadCount -= 1
+                    
+                    // 持久化保存失败状态
+                    self.saveTasksToPersistence()
+                    
                     self.delegate?.downloadManager(self, didFailTask: task, withError: error)
                     self.startNextTaskIfPossible()
                 }
@@ -294,6 +368,10 @@ extension DownloadManager: URLSessionTaskDelegate {
                 downloadTaskObj.error = error
                 downloadTaskObj.state = .failed
                 self.activeDownloadCount -= 1
+                
+                // 持久化保存失败状态
+                self.saveTasksToPersistence()
+                
                 self.delegate?.downloadManager(self, didFailTask: downloadTaskObj, withError: error)
                 self.startNextTaskIfPossible()
             }
