@@ -28,6 +28,10 @@ class ViewController: UIViewController {
         return UIBarButtonItem(title: "清除已完成", style: .plain, target: self, action: #selector(clearCompleted))
     }()
     
+    private lazy var eventBusButton: UIBarButtonItem = {
+        return UIBarButtonItem(title: "EventBus", style: .plain, target: self, action: #selector(openEventBusDemo))
+    }()
+    
     // MARK: - 属性
     private let downloadManager = DownloadManager.shared
     private var tasks: [DownloadTask] = []
@@ -55,7 +59,7 @@ class ViewController: UIViewController {
         view.backgroundColor = .systemBackground
         
         // 设置导航栏按钮
-        navigationItem.rightBarButtonItem = addButton
+        navigationItem.rightBarButtonItems = [addButton, eventBusButton]
         navigationItem.leftBarButtonItem = clearButton
         
         // 添加tableView
@@ -188,6 +192,11 @@ class ViewController: UIViewController {
         
         let indexPaths = completedIndices.map { IndexPath(row: $0, section: 0) }
         tableView.deleteRows(at: indexPaths, with: .fade)
+    }
+    
+    @objc private func openEventBusDemo() {
+        let eventBusVC = EventBusExampleViewController()
+        navigationController?.pushViewController(eventBusVC, animated: true)
     }
     
     private func handleTaskAction(_ task: DownloadTask) {
