@@ -319,29 +319,7 @@ class ImageLoaderDemoViewController: UIViewController {
     }
 }
 
-class RouterDemoViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "路由框架"
-        view.backgroundColor = .systemBackground
-        
-        let label = UILabel()
-        label.text = "路由框架演示\n\n功能：URL匹配、参数传递、拦截器\n\n敬请期待... 🗺️"
-        label.numberOfLines = 0
-        label.textAlignment = .center
-        label.font = .systemFont(ofSize: 18, weight: .medium)
-        label.textColor = .secondaryLabel
-        label.translatesAutoresizingMaskIntoConstraints = false
-        
-        view.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            label.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            label.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
-        ])
-    }
-}
+// RouterDemoViewController 已在 RouterDemoViewController.swift 中实现
 
 class LoggerDemoViewController: UIViewController {
     override func viewDidLoad() {

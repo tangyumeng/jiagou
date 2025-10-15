@@ -14,7 +14,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        
+        // 注册所有路由
+        registerAllRoutes()
+        
         return true
+    }
+    
+    // MARK: - 注册路由
+    private func registerAllRoutes() {
+        let router = Router.shared
+        
+        // 注册用户详情页
+        router.register("app://user/:userId", viewControllerType: RouteUserDetailViewController.self)
+        
+        // 注册设置页（模态）
+        router.register("app://settings", action: .present) { _ in
+            let vc = RouteSettingsViewController()
+            return UINavigationController(rootViewController: vc)
+        }
+        
+        // 注册商品详情
+        router.register("app://product/:productId", viewControllerType: RouteProductViewController.self)
+        
+        // 注册搜索页
+        router.register("app://search", viewControllerType: RouteSearchViewController.self)
+        
+        // 注册需要权限的页面
+        router.register("app://vip/:vipId", viewControllerType: RouteVIPViewController.self)
+        
+        print("✅ 应用启动时已注册所有路由")
     }
 
     // MARK: UISceneSession Lifecycle

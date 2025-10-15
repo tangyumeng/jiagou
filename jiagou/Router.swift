@@ -232,8 +232,12 @@ class Router {
         // 匹配路由
         guard let (routeInfo, pathParameters) = matchRoute(url: url) else {
             print("❌ 未找到匹配的路由：\(url)")
+            print("📋 当前已注册 \(routes.count) 个路由")
+            printAllRoutes()
             return false
         }
+        
+        print("✅ 路由匹配成功：\(routeInfo.pattern)")
         
         // 合并参数（URL 参数 + query 参数 + 额外参数）
         var allParameters = pathParameters
@@ -242,11 +246,17 @@ class Router {
         }
         allParameters.merge(parameters) { $1 }
         
+        print("📝 参数：\(allParameters)")
+        print("🔨 开始创建 ViewController...")
+        
         // 创建目标 ViewController
         guard let destination = routeInfo.handler(allParameters) else {
             print("❌ 创建 ViewController 失败：\(url)")
+            print("⚠️ handler 返回了 nil")
             return false
         }
+        
+        print("✅ ViewController 创建成功：\(type(of: destination))")
         
         // 执行跳转
         let sourceVC = source ?? currentViewController()
@@ -416,6 +426,23 @@ class Router {
     /// 移除所有拦截器
     func removeAllInterceptors() {
         interceptors.removeAll()
+    }
+    
+    // MARK: - 调试方法
+    
+    /// 打印所有已注册的路由（用于调试）
+    func printAllRoutes() {
+        print("📊 已注册的路由（共 \(routes.count) 个）：")
+        for (pattern, routeInfo) in routes {
+            let actionName: String
+            switch routeInfo.action {
+            case .push: actionName = "Push"
+            case .present: actionName = "Present"
+            case .replace: actionName = "Replace"
+            case .custom: actionName = "Custom"
+            }
+            print("  - \(pattern) [\(actionName)]")
+        }
     }
 }
 
