@@ -55,6 +55,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // 注册需要权限的页面
         router.register("app://vip/:vipId", viewControllerType: RouteVIPViewController.self)
         
+        // 注册图片预览页（演示传递复杂对象）
+        router.register("app://image-preview", viewControllerType: RouteImagePreviewViewController.self)
+        router.register("app://image-preview/:imageId", viewControllerType: RouteImagePreviewViewController.self)
+        
         print("✅ 应用启动时已注册所有路由")
     }
     

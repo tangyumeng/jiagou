@@ -32,6 +32,10 @@ class RouterDemoViewController: UIViewController {
     private let section4Label = UILabel()
     private let button7 = UIButton(type: .system)
     
+    private let section5Label = UILabel()
+    private let button8 = UIButton(type: .system)
+    private let button9 = UIButton(type: .system)
+    
     private let clearLogButton = UIButton(type: .system)
     
     // MARK: - 生命周期
@@ -78,6 +82,9 @@ class RouterDemoViewController: UIViewController {
         
         // Section 4: 通知路由
         setupSection4()
+        
+        // Section 5: 传递复杂对象
+        setupSection5()
         
         // 清除按钮
         clearLogButton.setTitle("清除日志", for: .normal)
@@ -175,6 +182,29 @@ class RouterDemoViewController: UIViewController {
         contentView.addSubview(button7)
     }
     
+    private func setupSection5() {
+        section5Label.text = "📦 传递复杂对象"
+        section5Label.font = .boldSystemFont(ofSize: 16)
+        section5Label.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(section5Label)
+        
+        button8.setTitle("方式1：parameters 字典", for: .normal)
+        button8.addTarget(self, action: #selector(testParametersObject), for: .touchUpInside)
+        button8.backgroundColor = .systemPurple
+        button8.setTitleColor(.white, for: .normal)
+        button8.layer.cornerRadius = 8
+        button8.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(button8)
+        
+        button9.setTitle("方式2：全局缓存 + ID", for: .normal)
+        button9.addTarget(self, action: #selector(testCacheObject), for: .touchUpInside)
+        button9.backgroundColor = .systemPurple
+        button9.setTitleColor(.white, for: .normal)
+        button9.layer.cornerRadius = 8
+        button9.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(button9)
+    }
+    
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -240,7 +270,20 @@ class RouterDemoViewController: UIViewController {
             button7.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             button7.heightAnchor.constraint(equalToConstant: 44),
             
-            clearLogButton.topAnchor.constraint(equalTo: button7.bottomAnchor, constant: 20),
+            section5Label.topAnchor.constraint(equalTo: button7.bottomAnchor, constant: 20),
+            section5Label.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            
+            button8.topAnchor.constraint(equalTo: section5Label.bottomAnchor, constant: 12),
+            button8.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            button8.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            button8.heightAnchor.constraint(equalToConstant: 44),
+            
+            button9.topAnchor.constraint(equalTo: button8.bottomAnchor, constant: 12),
+            button9.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            button9.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            button9.heightAnchor.constraint(equalToConstant: 44),
+            
+            clearLogButton.topAnchor.constraint(equalTo: button9.bottomAnchor, constant: 20),
             clearLogButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             clearLogButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             clearLogButton.heightAnchor.constraint(equalToConstant: 44),
@@ -346,6 +389,81 @@ class RouterDemoViewController: UIViewController {
                 }
             }
         }
+    }
+    
+    @objc private func testParametersObject() {
+        log("📤 测试传递 UIImage（方式1：parameters 字典）")
+        
+        // 创建测试图片
+        let image = createTestImage(text: "Hello Router!", size: CGSize(width: 300, height: 200))
+        
+        log("📦 创建图片：\(Int(image.size.width))×\(Int(image.size.height))")
+        log("📤 通过 parameters 直接传递 UIImage")
+        
+        // 方式1：通过 parameters 字典传递 UIImage
+        let success = Router.shared.open(
+            "app://image-preview",
+            parameters: [
+                "image": image,
+                "title": "方式1：Parameters"
+            ],
+            from: self
+        )
+        
+        log(success ? "✅ 跳转成功" : "❌ 跳转失败")
+    }
+    
+    @objc private func testCacheObject() {
+        log("📤 测试传递 UIImage（方式2：全局缓存）")
+        
+        // 创建测试图片
+        let image = createTestImage(text: "Cache ID: 12345", size: CGSize(width: 300, height: 200))
+        
+        log("📦 创建图片：\(Int(image.size.width))×\(Int(image.size.height))")
+        
+        // 方式2：存储到全局缓存
+        let imageId = RouteDataCache.shared.storeImage(image, ttl: 60)
+        log("📦 存储到缓存：ID = \(imageId)")
+        log("📤 通过 URL 传递 ID")
+        
+        // URL 中只传递 ID
+        let success = Router.shared.open("app://image-preview/\(imageId)", from: self)
+        
+        log(success ? "✅ 跳转成功" : "❌ 跳转失败")
+        log("💡 目标页面将从缓存中获取图片")
+    }
+    
+    /// 创建测试图片
+    private func createTestImage(text: String, size: CGSize) -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { context in
+            // 背景渐变
+            let colors = [UIColor.systemBlue.cgColor, UIColor.systemPurple.cgColor]
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: nil)!
+            context.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
+            
+            // 文字
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .center
+            
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 24),
+                .foregroundColor: UIColor.white,
+                .paragraphStyle: paragraphStyle
+            ]
+            
+            let textSize = text.size(withAttributes: attributes)
+            let textRect = CGRect(
+                x: (size.width - textSize.width) / 2,
+                y: (size.height - textSize.height) / 2,
+                width: textSize.width,
+                height: textSize.height
+            )
+            
+            text.draw(in: textRect, withAttributes: attributes)
+        }
+        
+        return image
     }
     
     // MARK: - 辅助方法
