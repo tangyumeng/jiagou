@@ -84,6 +84,17 @@ class HomeViewController: UIViewController {
         setupUI()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // 执行待处理的路由（如果有）
+        // 使用场景：App 从通知或 URL Scheme 启动时，UI 未就绪，路由被延迟
+        if Router.shared.hasPendingRoute {
+            print("🚀 HomeViewController 已就绪，执行待处理路由")
+            Router.shared.executePendingRoute()
+        }
+    }
+    
     // MARK: - UI 设置
     private func setupUI() {
         title = "iOS 架构设计"

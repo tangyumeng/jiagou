@@ -119,6 +119,10 @@ class Router {
     // 路由拦截器（中间件）
     private var interceptors: [(RouteRequest) -> Bool] = []
     
+    // 待处理的路由（用于 App 启动时 UI 未就绪的情况）
+    private var pendingURLString: String?
+    private var pendingParameters: [String: Any]?
+    
     // MARK: - 初始化
     private init() {
         registerBuiltInRoutes()
@@ -443,6 +447,61 @@ class Router {
             }
             print("  - \(pattern) [\(actionName)]")
         }
+    }
+    
+    // MARK: - 延迟路由（用于通知启动等场景）
+    
+    /// 设置待处理的路由（在 UI 未就绪时调用）
+    /// 使用场景：App 从通知启动，但 Window 和 RootViewController 还未初始化
+    /// - Parameters:
+    ///   - urlString: 路由 URL
+    ///   - parameters: 附加参数
+    func setPendingRoute(_ urlString: String, parameters: [String: Any] = [:]) {
+        if pendingURLString != nil {
+            print("⚠️ 覆盖之前的待处理路由：\(pendingURLString!)")
+        }
+        print("📌 设置待处理路由：\(urlString)")
+        pendingURLString = urlString
+        pendingParameters = parameters
+    }
+    
+    /// 执行待处理的路由（在 UI 就绪后调用）
+    /// 通常在 RootViewController 的 viewDidAppear 中调用
+    /// - Returns: 是否有路由被执行
+    @discardableResult
+    func executePendingRoute() -> Bool {
+        guard let urlString = pendingURLString else {
+            return false
+        }
+        
+        print("🚀 执行待处理路由：\(urlString)")
+        
+        let parameters = pendingParameters ?? [:]
+        
+        // 清除待处理的路由
+        pendingURLString = nil
+        pendingParameters = nil
+        
+        // 延迟执行，确保 UI 完全就绪
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.open(urlString, parameters: parameters)
+        }
+        
+        return true
+    }
+    
+    /// 是否有待处理的路由
+    var hasPendingRoute: Bool {
+        return pendingURLString != nil
+    }
+    
+    /// 清除待处理的路由
+    func clearPendingRoute() {
+        if pendingURLString != nil {
+            print("🗑️ 清除待处理路由：\(pendingURLString!)")
+        }
+        pendingURLString = nil
+        pendingParameters = nil
     }
 }
 

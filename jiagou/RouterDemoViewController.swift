@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import UserNotifications
 
 // MARK: - Router 演示主页
 
@@ -27,6 +28,9 @@ class RouterDemoViewController: UIViewController {
     private let section3Label = UILabel()
     private let button5 = UIButton(type: .system)
     private let button6 = UIButton(type: .system)
+    
+    private let section4Label = UILabel()
+    private let button7 = UIButton(type: .system)
     
     private let clearLogButton = UIButton(type: .system)
     
@@ -71,6 +75,9 @@ class RouterDemoViewController: UIViewController {
         
         // Section 3: 拦截器
         setupSection3()
+        
+        // Section 4: 通知路由
+        setupSection4()
         
         // 清除按钮
         clearLogButton.setTitle("清除日志", for: .normal)
@@ -153,6 +160,21 @@ class RouterDemoViewController: UIViewController {
         contentView.addSubview(button6)
     }
     
+    private func setupSection4() {
+        section4Label.text = "🔔 通知路由测试"
+        section4Label.font = .boldSystemFont(ofSize: 16)
+        section4Label.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(section4Label)
+        
+        button7.setTitle("发送测试通知（5秒后）", for: .normal)
+        button7.addTarget(self, action: #selector(testNotification), for: .touchUpInside)
+        button7.backgroundColor = .systemIndigo
+        button7.setTitleColor(.white, for: .normal)
+        button7.layer.cornerRadius = 8
+        button7.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(button7)
+    }
+    
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -210,7 +232,15 @@ class RouterDemoViewController: UIViewController {
             button6.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             button6.heightAnchor.constraint(equalToConstant: 44),
             
-            clearLogButton.topAnchor.constraint(equalTo: button6.bottomAnchor, constant: 20),
+            section4Label.topAnchor.constraint(equalTo: button6.bottomAnchor, constant: 20),
+            section4Label.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            
+            button7.topAnchor.constraint(equalTo: section4Label.bottomAnchor, constant: 12),
+            button7.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            button7.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            button7.heightAnchor.constraint(equalToConstant: 44),
+            
+            clearLogButton.topAnchor.constraint(equalTo: button7.bottomAnchor, constant: 20),
             clearLogButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             clearLogButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             clearLogButton.heightAnchor.constraint(equalToConstant: 44),
@@ -272,6 +302,50 @@ class RouterDemoViewController: UIViewController {
         log("📤 尝试打开：app://vip/888")
         let success = Router.shared.open("app://vip/888", from: self)
         log(success ? "✅ 跳转成功（无拦截）" : "❌ 跳转失败")
+    }
+    
+    @objc private func testNotification() {
+        log("📤 准备发送本地通知...")
+        
+        // 创建通知内容
+        let content = UNMutableNotificationContent()
+        content.title = "路由测试通知"
+        content.body = "点击此通知将跳转到 VIP 页面"
+        content.sound = .default
+        content.badge = 1
+        
+        // 添加路由信息到通知负载
+        content.userInfo = [
+            "route": "app://vip/999",
+            "parameters": [
+                "from": "notification",
+                "message": "通知路由测试成功！"
+            ]
+        ]
+        
+        // 5秒后触发
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+        
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: trigger
+        )
+        
+        // 添加通知请求
+        UNUserNotificationCenter.current().add(request) { [weak self] error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self?.log("❌ 通知发送失败：\(error.localizedDescription)")
+                } else {
+                    self?.log("✅ 通知已调度（5秒后触发）")
+                    self?.log("💡 提示：")
+                    self?.log("  1. 前台：等待通知 banner 并点击")
+                    self?.log("  2. 后台：按 Home 键，等待并点击通知")
+                    self?.log("  3. 杀死 App：从多任务管理器杀死 App，等待并点击通知")
+                }
+            }
+        }
     }
     
     // MARK: - 辅助方法
