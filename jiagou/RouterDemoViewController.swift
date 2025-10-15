@@ -220,6 +220,9 @@ class RouterDemoViewController: UIViewController {
     
     // MARK: - 按钮响应
     @objc private func openUserDetail() {
+        
+//        let success = Router.shared.open("app://back", from: self)
+//        log(success ? "✅ 跳转成功" : "❌ 跳转失败")
         log("📤 打开：app://user/12345")
         let success = Router.shared.open("app://user/12345", from: self)
         log(success ? "✅ 跳转成功" : "❌ 跳转失败")

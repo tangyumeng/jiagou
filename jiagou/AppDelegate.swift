@@ -30,8 +30,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // 注册设置页（模态）
         router.register("app://settings", action: .present) { _ in
+            print("🔨 开始创建 RouteSettingsViewController")
             let vc = RouteSettingsViewController()
-            return UINavigationController(rootViewController: vc)
+            print("✅ RouteSettingsViewController 创建成功")
+            print("🔨 开始创建 UINavigationController")
+            let navController = UINavigationController(rootViewController: vc)
+            print("✅ UINavigationController 创建成功")
+            return navController
         }
         
         // 注册商品详情

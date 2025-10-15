@@ -270,12 +270,12 @@ class Router {
     /// 匹配路由
     /// - Returns: (RouteInfo, 路径参数)
     private func matchRoute(url: URL) -> (RouteInfo, [String: Any])? {
-        let urlPath = url.path
+        let urlPath = url.absoluteString
         
         for (pattern, routeInfo) in routes {
             // 解析 pattern
             guard let patternURL = URL(string: pattern) else { continue }
-            let patternPath = patternURL.path
+            let patternPath = patternURL.absoluteString
             
             // 匹配路径
             if let parameters = match(urlPath: urlPath, with: patternPath) {

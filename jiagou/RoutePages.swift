@@ -70,7 +70,8 @@ class RouteSettingsViewController: UIViewController {
     }
     
     @objc private func dismissPage() {
-        dismiss(animated: true)
+        Router.shared.open("app://dismiss")
+//        dismiss(animated: true)
     }
 }
 
