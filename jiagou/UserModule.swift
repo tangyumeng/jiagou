@@ -130,7 +130,7 @@ class UserModule: UserModuleProtocol {
         // ✅ 通过协议类型调用 ProductModule（无需 import ProductModule）
         // 在 CocoaPods 组件化中，UserModule Pod 不依赖 ProductModule Pod
         // 只依赖 ModuleProtocols Pod，通过协议类型进行通信
-        if let productModule = ModuleManager.shared.module(ProductModuleProtocol.self) {
+        if let productModule = ModuleManager.shared.module(ProductModule.self) {
             print("🔄 UserModule: 通知 ProductModule 同步购物车")
             productModule.syncCart()
         }
@@ -147,7 +147,7 @@ class UserModule: UserModuleProtocol {
         print("🗑️ UserModule: 通知其他模块清空数据")
         
         // ✅ 通过协议类型调用 ProductModule
-        if let productModule = ModuleManager.shared.module(ProductModuleProtocol.self) {
+        if let productModule = ModuleManager.shared.module(ProductModule.self) {
             print("🗑️ UserModule: 通知 ProductModule 清空购物车")
             productModule.clearCart()
         }

@@ -118,7 +118,7 @@ class ProductModule: ProductModuleProtocol {
         // ✅ 关键：通过协议类型获取 UserModule（无需 import UserModule）
         // 在 CocoaPods 组件化中，ProductModule Pod 不依赖 UserModule Pod
         // 只依赖 ModuleProtocols Pod，通过协议类型进行通信
-        guard let userModule = ModuleManager.shared.module(UserModuleProtocol.self) else {
+        guard let userModule = ModuleManager.shared.module(UserModule.self) else {
             print("❌ 无法获取 UserModule（可能未注册）")
             return false
         }
@@ -151,7 +151,7 @@ class ProductModule: ProductModuleProtocol {
         print("🔄 同步购物车...")
         
         // ✅ 通过协议类型获取 UserModule（无需 import UserModule）
-        guard let userModule = ModuleManager.shared.module(UserModuleProtocol.self) else {
+        guard let userModule = ModuleManager.shared.module(UserModule.self) else {
             print("⚠️ 无法获取 UserModule，跳过同步")
             return
         }
