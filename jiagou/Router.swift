@@ -319,6 +319,26 @@ class Router {
         return parameters
     }
     
+    private func match2(urlPath: String, with patternPath: String) -> [String:Any]? {
+        let urlComponents = urlPath.split(separator: "/").map(String.init)
+        let patternComponents = patternPath.split(separator: "/").map(String.init)
+        
+        guard urlComponents.count == patternComponents.count else {
+            return nil
+        }
+        
+        var parameters : [String: Any] = [:]
+        for (urlComponent, patternComponent) in zip(urlComponents, patternComponents) {
+            if patternComponent.hasPrefix(":") {
+                let key = String(patternComponent.dropFirst())
+                parameters[key] = urlComponent
+            } else if urlComponent != patternComponent {
+                return nil
+            }
+         }
+        return parameters
+    }
+    
     // MARK: - 执行跳转
     
     /// 执行跳转动作
