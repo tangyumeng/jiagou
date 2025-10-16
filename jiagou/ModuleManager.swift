@@ -57,29 +57,44 @@ class ModuleManager {
     // MARK: - 获取模块
     
     /// 获取模块实例（单例，线程安全）
-    /// - Parameter type: 模块类型
+    /// - Parameter type: 模块类型或协议类型
     /// - Returns: 模块实例
+    /// 
+    /// 使用示例：
+    /// ```
+    /// // 方式1：通过具体类型（在主工程中使用）
+    /// let userModule = ModuleManager.shared.module(UserModule.self)
+    /// 
+    /// // 方式2：通过协议类型（在其他模块中使用，推荐⭐）
+    /// let userModule = ModuleManager.shared.module(UserModuleProtocol.self)
+    /// ```
     func module<T: ModuleProtocol>(_ type: T.Type) -> T? {
-        let moduleName = type.moduleName
         var result: T?
         
         queue.sync { [weak self] in
-            // 从缓存获取
-            if let instance = self?.instances[moduleName] as? T {
-                result = instance
-                return
+            guard let self = self else { return }
+            
+            // 遍历所有已注册的模块
+            for (moduleName, moduleType) in self.modules {
+                // 检查模块是否实现了指定的协议/类型
+                if let matchedType = moduleType as? T.Type {
+                    // 从缓存获取实例
+                    if let instance = self.instances[moduleName] as? T {
+                        result = instance
+                        return
+                    }
+                    
+                    // 创建新实例
+                    let instance = matchedType.init()
+                    self.instances[moduleName] = instance
+                    result = instance
+                    print("📦 创建模块实例：\(moduleName)")
+                    return
+                }
             }
             
-            // 创建新实例
-            guard let moduleType = self?.modules[moduleName] as? T.Type else {
-                print("❌ 模块未注册：\(moduleName)")
-                return
-            }
-            
-            let instance = moduleType.init()
-            self?.instances[moduleName] = instance
-            result = instance
-            print("📦 创建模块实例：\(moduleName)")
+            // 未找到匹配的模块
+            print("❌ 未找到实现 \(type) 协议的模块")
         }
         
         return result

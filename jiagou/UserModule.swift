@@ -104,6 +104,10 @@ class UserModule: UserModuleProtocol {
                     avatar: "avatar.jpg",
                     email: "\(username)@example.com"
                 )
+                
+                // 登录成功后，通知其他模块同步数据
+                self?.notifyOtherModulesAfterLogin()
+                
                 completion(true, nil)
             }
         }
@@ -112,6 +116,46 @@ class UserModule: UserModuleProtocol {
     func logout() {
         print("🔓 登出")
         currentUser = nil
+        
+        // 登出后，通知其他模块清空数据
+        notifyOtherModulesAfterLogout()
+    }
+    
+    // MARK: - 跨模块通信
+    
+    /// 登录成功后通知其他模块
+    private func notifyOtherModulesAfterLogin() {
+        print("🔄 UserModule: 通知其他模块同步数据")
+        
+        // ✅ 通过协议类型调用 ProductModule（无需 import ProductModule）
+        // 在 CocoaPods 组件化中，UserModule Pod 不依赖 ProductModule Pod
+        // 只依赖 ModuleProtocols Pod，通过协议类型进行通信
+        if let productModule = ModuleManager.shared.module(ProductModuleProtocol.self) {
+            print("🔄 UserModule: 通知 ProductModule 同步购物车")
+            productModule.syncCart()
+        }
+        
+        // 可以通知更多模块（如果有）
+        // if let orderModule = ModuleManager.shared.module(OrderModuleProtocol.self) {
+        //     print("🔄 UserModule: 通知 OrderModule 同步订单")
+        //     orderModule.syncOrders()
+        // }
+    }
+    
+    /// 登出后通知其他模块
+    private func notifyOtherModulesAfterLogout() {
+        print("🗑️ UserModule: 通知其他模块清空数据")
+        
+        // ✅ 通过协议类型调用 ProductModule
+        if let productModule = ModuleManager.shared.module(ProductModuleProtocol.self) {
+            print("🗑️ UserModule: 通知 ProductModule 清空购物车")
+            productModule.clearCart()
+        }
+        
+        // 可以通知更多模块
+        // if let orderModule = ModuleManager.shared.module(OrderModuleProtocol.self) {
+        //     orderModule.clearOrders()
+        // }
     }
     
     func isLoggedIn() -> Bool {

@@ -33,6 +33,12 @@ protocol ProductModuleProtocol: PageModuleProtocol, ServiceModuleProtocol {
     
     /// 收藏商品
     func favoriteProduct(productId: String) -> Bool
+    
+    /// 同步购物车（登录后调用）
+    func syncCart()
+    
+    /// 清空购物车（登出后调用）
+    func clearCart()
 }
 
 // MARK: - 商品模块实现
@@ -109,7 +115,22 @@ class ProductModule: ProductModuleProtocol {
     }
     
     func addToCart(productId: String, quantity: Int) -> Bool {
-        print("🛒 添加到购物车：\(productId) x\(quantity)")
+        // ✅ 关键：通过协议类型获取 UserModule（无需 import UserModule）
+        // 在 CocoaPods 组件化中，ProductModule Pod 不依赖 UserModule Pod
+        // 只依赖 ModuleProtocols Pod，通过协议类型进行通信
+        guard let userModule = ModuleManager.shared.module(UserModuleProtocol.self) else {
+            print("❌ 无法获取 UserModule（可能未注册）")
+            return false
+        }
+        
+        // 检查登录状态（通过协议调用）
+        guard let user = userModule.getCurrentUser() else {
+            print("❌ 用户未登录，无法添加到购物车")
+            return false
+        }
+        
+        // 添加到购物车
+        print("🛒 用户 \(user.name) 添加商品：\(productId) x\(quantity)")
         
         if let currentQuantity = cart[productId] {
             cart[productId] = currentQuantity + quantity
@@ -124,6 +145,31 @@ class ProductModule: ProductModuleProtocol {
         print("❤️ 收藏商品：\(productId)")
         favorites.insert(productId)
         return true
+    }
+    
+    func syncCart() {
+        print("🔄 同步购物车...")
+        
+        // ✅ 通过协议类型获取 UserModule（无需 import UserModule）
+        guard let userModule = ModuleManager.shared.module(UserModuleProtocol.self) else {
+            print("⚠️ 无法获取 UserModule，跳过同步")
+            return
+        }
+        
+        // 获取用户信息
+        if let user = userModule.getCurrentUser() {
+            print("✅ 为用户 \(user.name) 同步购物车")
+            
+            // 这里可以从服务器获取购物车数据
+            // networkService.get(url: "/cart/\(user.id)") { ... }
+        } else {
+            print("⚠️ 用户未登录，无需同步购物车")
+        }
+    }
+    
+    func clearCart() {
+        print("🗑️ 清空购物车")
+        cart.removeAll()
     }
 }
 
