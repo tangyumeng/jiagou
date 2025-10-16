@@ -16,13 +16,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         
-        // 1. 注册所有路由
+        // 1. 注册所有路由（URL-Based Router）
         registerAllRoutes()
         
-        // 2. 请求通知权限
+        // 2. 注册所有模块（Protocol-Based Router）
+        registerAllModules()
+        
+        // 3. 请求通知权限
         requestNotificationPermission()
         
-        // 3. 处理从通知启动的情况
+        // 4. 处理从通知启动的情况
         handleLaunchFromNotification(launchOptions: launchOptions)
         
         return true
@@ -60,6 +63,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         router.register("app://image-preview/:imageId", viewControllerType: RouteImagePreviewViewController.self)
         
         print("✅ 应用启动时已注册所有路由")
+    }
+    
+    // MARK: - 注册模块（Protocol-Based Router）
+    
+    private func registerAllModules() {
+        let manager = ModuleManager.shared
+        
+        // 注册用户模块
+        manager.register(UserModule.self)
+        
+        // 注册商品模块
+        manager.register(ProductModule.self)
+        
+        print("✅ 应用启动时已注册所有模块")
     }
     
     // MARK: - 通知处理

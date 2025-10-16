@@ -75,6 +75,13 @@ class HomeViewController: UIViewController {
             icon: "square.stack.3d.up.fill",
             color: .systemTeal,
             viewController: { MVVMDemoViewController() }
+        ),
+        ArchitectureItem(
+            title: "协议路由（模块化）",
+            subtitle: "类型安全 · 模块通信 · 服务调用 · 大型项目",
+            icon: "link.circle.fill",
+            color: .systemIndigo,
+            viewController: { ModuleDemoViewController() }
         )
     ]
     
@@ -248,7 +255,7 @@ class HomeHeaderView: UIView {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "iOS 架构设计集合"
+        label.text = "iOS 架构设计"
         label.font = .systemFont(ofSize: 28, weight: .bold)
         label.textColor = .label
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -257,7 +264,7 @@ class HomeHeaderView: UIView {
     
     private let subtitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "6个热门框架 · 面试必备 · 实战演练"
+        label.text = "7个热门框架 · 面试必备 · 实战演练"
         label.font = .systemFont(ofSize: 15, weight: .regular)
         label.textColor = .secondaryLabel
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -266,7 +273,7 @@ class HomeHeaderView: UIView {
     
     private let statsLabel: UILabel = {
         let label = UILabel()
-        label.text = "📦 下载管理器 · 🖼️ 图片加载 · 🗺️ 路由 · 📝 日志 · 📢 EventBus · 🏗️ MVVM"
+        label.text = "📦 下载 · 🖼️ 图片 · 🗺️ URL路由 · 📝 日志 · 📢 EventBus · 🏗️ MVVM · 🔗 协议路由"
         label.font = .systemFont(ofSize: 13, weight: .regular)
         label.textColor = .tertiaryLabel
         label.numberOfLines = 0
