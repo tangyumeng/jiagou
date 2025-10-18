@@ -57,11 +57,13 @@ class MVPDemoViewController: UIViewController {
     }()
     
     private lazy var taskListButton: UIButton = {
-        let button = createDemoButton(
-            title: "📋 任务列表演示",
-            subtitle: "完整的任务管理功能",
-            backgroundColor: .systemBlue
-        )
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.backgroundColor = .systemBlue
+        button.layer.cornerRadius = 12
+        button.setTitle("📋 任务列表演示", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        button.setTitleColor(.white, for: .normal)
         button.addTarget(self, action: #selector(showTaskList), for: .touchUpInside)
         return button
     }()
