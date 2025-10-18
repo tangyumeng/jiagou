@@ -42,6 +42,8 @@ class LoggerDemoViewController: UIViewController {
         setupUI()
         setupActions()
         
+        Logger.shared.addDestination(FileLogDestination())
+        
         // 记录初始化日志
         logInfo("日志框架演示已启动")
     }

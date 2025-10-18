@@ -77,6 +77,13 @@ class HomeViewController: UIViewController {
             viewController: { MVVMDemoViewController() }
         ),
         ArchitectureItem(
+            title: "MVP 架构",
+            subtitle: "职责分离 · 易于测试 · 手动绑定",
+            icon: "rectangle.stack.fill",
+            color: .systemCyan,
+            viewController: { MVPDemoViewController() }
+        ),
+        ArchitectureItem(
             title: "协议路由（模块化）",
             subtitle: "类型安全 · 模块通信 · 服务调用 · 大型项目",
             icon: "link.circle.fill",
