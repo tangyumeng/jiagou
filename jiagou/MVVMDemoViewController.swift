@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import SwiftUI
 
 // MARK: - MVVM 演示控制器
 
@@ -74,11 +73,11 @@ class MVVMDemoViewController: UIViewController {
         • 处理数据持久化
         • 提供数据访问接口
         
-        优势：
+        本演示使用纯 UIKit 实现：
+        ✅ 自定义数据绑定机制
         ✅ 清晰的职责分离
         ✅ 易于测试和维护
-        ✅ 支持数据绑定
-        ✅ 提高代码复用性
+        ✅ 无 SwiftUI 依赖
         """
         descriptionLabel.font = .systemFont(ofSize: 16)
         descriptionLabel.textColor = .secondaryLabel
@@ -143,7 +142,7 @@ class MVVMDemoViewController: UIViewController {
     
     private func setupDemoButtons() {
         // 用户列表按钮
-        userListButton.setTitle("📱 用户列表演示 (SwiftUI)", for: .normal)
+        userListButton.setTitle("📱 用户列表演示 (UIKit)", for: .normal)
         userListButton.backgroundColor = .systemBlue
         userListButton.setTitleColor(.white, for: .normal)
         userListButton.layer.cornerRadius = 8
@@ -152,7 +151,7 @@ class MVVMDemoViewController: UIViewController {
         contentView.addSubview(userListButton)
         
         // 用户登录按钮
-        userLoginButton.setTitle("🔐 用户登录演示 (SwiftUI)", for: .normal)
+        userLoginButton.setTitle("🔐 用户登录演示 (UIKit)", for: .normal)
         userLoginButton.backgroundColor = .systemGreen
         userLoginButton.setTitleColor(.white, for: .normal)
         userLoginButton.layer.cornerRadius = 8
@@ -189,17 +188,13 @@ class MVVMDemoViewController: UIViewController {
     // MARK: - 按钮动作
     
     @objc private func showUserList() {
-        let userListView = MVVMUserListView()
-        let hostingController = UIHostingController(rootView: userListView)
-        hostingController.title = "用户列表 (MVVM)"
-        navigationController?.pushViewController(hostingController, animated: true)
+        let userListVC = MVVMUserListViewController()
+        navigationController?.pushViewController(userListVC, animated: true)
     }
     
     @objc private func showUserLogin() {
-        let userLoginView = MVVMUserLoginView()
-        let hostingController = UIHostingController(rootView: userLoginView)
-        hostingController.title = "用户登录 (MVVM)"
-        navigationController?.pushViewController(hostingController, animated: true)
+        let userLoginVC = MVVMUserLoginViewController()
+        navigationController?.pushViewController(userLoginVC, animated: true)
     }
     
     @objc private func showArchitecture() {

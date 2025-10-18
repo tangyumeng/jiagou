@@ -3,12 +3,11 @@
 //  jiagou
 //
 //  MVVM 设计模式 - ViewModel 层
-//  用户业务逻辑处理
+//  用户业务逻辑处理（使用自定义绑定）
 //
 
 import Foundation
 import UIKit
-import Combine
 
 // MARK: - 用户列表状态
 
@@ -20,86 +19,68 @@ enum UserListState {
     case empty
 }
 
-// MARK: - 用户操作状态
-
 /// 用户操作状态
 enum UserOperationState: Equatable {
     case idle
     case loading
     case success(String)
-    case error(String)
+    case failure(String)
 }
 
 // MARK: - 用户列表 ViewModel
 
-/// 用户列表 ViewModel（MVVM ViewModel层）
-class MVVMUserListViewModel: ObservableObject {
+/// 用户列表 ViewModel（使用自定义绑定）
+class MVVMUserListViewModel {
     
-    // MARK: - 属性
+    // MARK: - 绑定属性
+    let users = Bindable<[MVVMUserModel]>([])
+    let isLoading = Bindable<Bool>(false)
+    let errorMessage = Bindable<String?>(nil)
+    let searchText = TwoWayBindable<String>("")
+    let selectedFilter = TwoWayBindable<String>("全部")
+    let sortType = TwoWayBindable<String>("创建时间")
     
-    /// 用户数据服务
-    private let userDataService: UserDataServiceProtocol
-    
-    /// 用户列表状态
-    @Published var listState: UserListState = .loading
-    
-    /// 操作状态
-    @Published var operationState: UserOperationState = .idle
-    
-    /// 搜索关键词
-    @Published var searchText: String = "" {
-        didSet {
-            filterUsers()
-        }
-    }
-    
-    /// 排序方式
-    @Published var sortType: SortType = .name
-    
-    /// 是否显示在线用户
-    @Published var showOnlineOnly: Bool = false
-    
-    /// 原始用户数据
-    private var originalUsers: [MVVMUserModel] = []
-    
-    /// 过滤后的用户数据
+    // MARK: - 私有属性
+    private let userService: UserDataServiceProtocol
+    private var allUsers: [MVVMUserModel] = []
     private var filteredUsers: [MVVMUserModel] = []
     
-    // MARK: - 排序类型
-    
-    enum SortType: String, CaseIterable {
-        case name = "按姓名"
-        case email = "按邮箱"
-        case loginTime = "按登录时间"
-        case loginCount = "按登录次数"
-        
-        var sortKey: (MVVMUserModel) -> String {
-            switch self {
-            case .name: return { $0.name }
-            case .email: return { $0.email }
-            case .loginTime: return { $0.formattedLastLoginTime }
-            case .loginCount: return { String($0.loginCount) }
-            }
-        }
+    // MARK: - 初始化
+    init(userService: UserDataServiceProtocol = UserDataService()) {
+        self.userService = userService
+        setupBindings()
     }
     
-    // MARK: - 初始化
-    
-    init(userDataService: UserDataServiceProtocol = UserDataService()) {
-        self.userDataService = userDataService
-        loadUsers()
+    // MARK: - 绑定设置
+    private func setupBindings() {
+        // 搜索文本变化时重新过滤
+        searchText.bind { [weak self] _ in
+            self?.applyFilters()
+        }
+        
+        // 过滤器变化时重新过滤
+        selectedFilter.bind { [weak self] _ in
+            self?.applyFilters()
+        }
+        
+        // 排序类型变化时重新排序
+        sortType.bind { [weak self] _ in
+            self?.applySorting()
+        }
     }
     
     // MARK: - 公共方法
     
     /// 加载用户列表
     func loadUsers() {
-        listState = .loading
+        isLoading.value = true
+        errorMessage.value = nil
         
-        userDataService.fetchUsers { [weak self] users in
+        userService.fetchUsers { [weak self] users in
             DispatchQueue.main.async {
-                self?.originalUsers = users
-                self?.filterUsers()
+                self?.isLoading.value = false
+                self?.allUsers = users
+                self?.applyFilters()
             }
         }
     }
@@ -109,188 +90,190 @@ class MVVMUserListViewModel: ObservableObject {
         loadUsers()
     }
     
-    /// 删除用户
-    func deleteUser(at index: Int) {
-        guard let user = getCurrentUser(at: index) else { return }
-        
-        operationState = .loading
-        
-        userDataService.deleteUser(id: user.id) { [weak self] result in
-            DispatchQueue.main.async {
-                if result.isSuccess {
-                    self?.originalUsers.removeAll { $0.id == user.id }
-                    self?.filterUsers()
-                    self?.operationState = .success(result.message)
-                } else {
-                    self?.operationState = .error(result.message)
-                }
-            }
-        }
+    /// 搜索用户
+    func searchUsers(query: String) {
+        searchText.value = query
     }
     
-    /// 更新用户信息
-    func updateUser(_ user: MVVMUserModel) {
-        operationState = .loading
+    /// 过滤用户
+    func filterUsers(by filter: String) {
+        selectedFilter.value = filter
+    }
+    
+    /// 排序用户
+    func sortUsers(by sort: String) {
+        sortType.value = sort
+    }
+    
+    /// 删除用户
+    func deleteUser(id: String) {
+        guard let index = allUsers.firstIndex(where: { $0.id == id }) else { return }
         
-        userDataService.updateUser(user) { [weak self] result in
-            DispatchQueue.main.async {
-                if result.isSuccess {
-                    if let index = self?.originalUsers.firstIndex(where: { $0.id == user.id }) {
-                        self?.originalUsers[index] = user
-                        self?.filterUsers()
-                    }
-                    self?.operationState = .success(result.message)
-                } else {
-                    self?.operationState = .error(result.message)
-                }
-            }
-        }
+        let user = allUsers[index]
+        allUsers.remove(at: index)
+        applyFilters()
+        
+        // 这里可以调用服务删除用户
+        // userService.deleteUser(id: id) { success in
+        //     if !success {
+        //         // 恢复用户
+        //         self.allUsers.insert(user, at: index)
+        //         self.applyFilters()
+        //     }
+        // }
     }
     
     /// 切换用户在线状态
-    func toggleUserOnlineStatus(at index: Int) {
-        guard var user = getCurrentUser(at: index) else { return }
+    func toggleUserOnlineStatus(id: String) {
+        guard let index = allUsers.firstIndex(where: { $0.id == id }) else { return }
         
+        var user = allUsers[index]
         user.isOnline.toggle()
-        user.lastLoginTime = Date()
-        user.loginCount += 1
-        
-        updateUser(user)
-    }
-    
-    /// 清空操作状态
-    func clearOperationState() {
-        operationState = .idle
-    }
-    
-    /// 设置排序方式
-    func setSortType(_ type: SortType) {
-        sortType = type
-        filterUsers()
-    }
-    
-    /// 切换在线用户过滤
-    func toggleOnlineFilter() {
-        showOnlineOnly.toggle()
-        filterUsers()
+        allUsers[index] = user
+        applyFilters()
     }
     
     // MARK: - 私有方法
     
-    /// 过滤用户
-    private func filterUsers() {
-        var users = originalUsers
+    /// 应用过滤条件
+    private func applyFilters() {
+        var result = allUsers
         
-        // 搜索过滤
-        if !searchText.isEmpty {
-            users = users.filter { user in
-                user.name.localizedCaseInsensitiveContains(searchText) ||
-                user.email.localizedCaseInsensitiveContains(searchText)
+        // 应用搜索过滤
+        let searchQuery = searchText.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !searchQuery.isEmpty {
+            result = result.filter { user in
+                user.name.localizedCaseInsensitiveContains(searchQuery) ||
+                user.email.localizedCaseInsensitiveContains(searchQuery)
             }
         }
         
-        // 在线用户过滤
-        if showOnlineOnly {
-            users = users.filter { $0.isOnline }
+        // 应用状态过滤
+        let filter = selectedFilter.value
+        if filter == "仅在线" {
+            result = result.filter { $0.isOnline }
+        } else if filter == "仅离线" {
+            result = result.filter { !$0.isOnline }
         }
         
-        // 排序
-        users.sort { user1, user2 in
-            let key1 = sortType.sortKey(user1)
-            let key2 = sortType.sortKey(user2)
-            return key1.localizedCaseInsensitiveCompare(key2) == .orderedAscending
-        }
-        
-        filteredUsers = users
-        
-        // 更新状态
-        if users.isEmpty {
-            if originalUsers.isEmpty {
-                listState = .empty
-            } else {
-                listState = .loaded([])
-            }
-        } else {
-            listState = .loaded(users)
-        }
+        filteredUsers = result
+        applySorting()
     }
     
-    /// 获取当前用户（考虑过滤和排序）
-    private func getCurrentUser(at index: Int) -> MVVMUserModel? {
-        guard case .loaded(let users) = listState,
-              index >= 0 && index < users.count else {
-            return nil
+    /// 应用排序
+    private func applySorting() {
+        let sort = sortType.value
+        filteredUsers = filteredUsers.sorted { user1, user2 in
+            switch sort {
+            case "姓名":
+                return user1.name.localizedCaseInsensitiveCompare(user2.name) == .orderedAscending
+            case "邮箱":
+                return user1.email.localizedCaseInsensitiveCompare(user2.email) == .orderedAscending
+            case "登录时间":
+                return user1.lastLoginTime > user2.lastLoginTime
+            case "登录次数":
+                return user1.loginCount > user2.loginCount
+            case "在线状态":
+                if user1.isOnline != user2.isOnline {
+                    return user1.isOnline && !user2.isOnline
+                }
+                return user1.name.localizedCaseInsensitiveCompare(user2.name) == .orderedAscending
+            default: // "创建时间"
+                return user1.id.localizedCaseInsensitiveCompare(user2.id) == .orderedAscending
+            }
         }
-        return users[index]
+        
+        users.value = filteredUsers
     }
 }
 
 // MARK: - 用户详情 ViewModel
 
-/// 用户详情 ViewModel
-class MVVMUserDetailViewModel: ObservableObject {
+/// 用户详情 ViewModel（使用自定义绑定）
+class MVVMUserDetailViewModel {
     
-    // MARK: - 属性
+    // MARK: - 绑定属性
+    let user = Bindable<MVVMUserModel?>(nil)
+    let isLoading = Bindable<Bool>(false)
+    let operationState = Bindable<UserOperationState>(.idle)
     
-    private let userDataService: UserDataServiceProtocol
+    // 编辑相关绑定
+    let name = TwoWayBindable<String>("")
+    let email = TwoWayBindable<String>("")
+    let isOnline = TwoWayBindable<Bool>(false)
     
-    @Published var user: MVVMUserModel
-    @Published var operationState: UserOperationState = .idle
-    @Published var isEditing: Bool = false
-    
-    // 编辑时的临时数据
-    @Published var editingName: String = ""
-    @Published var editingEmail: String = ""
-    @Published var editingAvatar: String = ""
+    // MARK: - 私有属性
+    private let userService: UserDataServiceProtocol
+    private var currentUser: MVVMUserModel?
     
     // MARK: - 初始化
+    init(userService: UserDataServiceProtocol = UserDataService()) {
+        self.userService = userService
+        setupBindings()
+    }
     
-    init(user: MVVMUserModel, userDataService: UserDataServiceProtocol = UserDataService()) {
-        self.user = user
-        self.userDataService = userDataService
-        setupEditingData()
+    // MARK: - 绑定设置
+    private func setupBindings() {
+        // 用户数据变化时更新编辑字段
+        user.bind { [weak self] user in
+            if let user = user {
+                self?.name.value = user.name
+                self?.email.value = user.email
+                self?.isOnline.value = user.isOnline
+            }
+        }
     }
     
     // MARK: - 公共方法
     
-    /// 开始编辑
-    func startEditing() {
-        isEditing = true
-        setupEditingData()
-    }
-    
-    /// 取消编辑
-    func cancelEditing() {
-        isEditing = false
-        setupEditingData()
-    }
-    
-    /// 保存编辑
-    func saveEditing() {
-        // 验证数据
-        let tempUser = MVVMUserModel(
-            id: user.id,
-            name: editingName,
-            email: editingEmail,
-            avatar: editingAvatar.isEmpty ? nil : editingAvatar
-        )
+    /// 加载用户详情
+    func loadUser(id: String) {
+        isLoading.value = true
+        operationState.value = .idle
         
-        let errors = tempUser.validationErrors
-        if !errors.isEmpty {
-            operationState = .error(errors.joined(separator: ", "))
+        userService.fetchUser(id: id) { [weak self] user in
+            DispatchQueue.main.async {
+                self?.isLoading.value = false
+                self?.currentUser = user
+                self?.user.value = user
+            }
+        }
+    }
+    
+    /// 更新用户信息
+    func updateUser() {
+        guard let currentUser = currentUser else { return }
+        
+        // 验证输入
+        let nameText = name.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let emailText = email.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if nameText.isEmpty {
+            operationState.value = .failure("姓名不能为空")
             return
         }
         
-        operationState = .loading
+        if !isValidEmail(emailText) {
+            operationState.value = .failure("邮箱格式不正确")
+            return
+        }
         
-        userDataService.updateUser(tempUser) { [weak self] result in
+        operationState.value = .loading
+        
+        var updatedUser = currentUser
+        updatedUser.name = nameText
+        updatedUser.email = emailText
+        updatedUser.isOnline = isOnline.value
+        
+        userService.updateUser(updatedUser) { [weak self] result in
             DispatchQueue.main.async {
-                if result.isSuccess {
-                    self?.user = tempUser
-                    self?.isEditing = false
-                    self?.operationState = .success(result.message)
-                } else {
-                    self?.operationState = .error(result.message)
+                switch result {
+                case .success(let message):
+                    self?.currentUser = updatedUser
+                    self?.user.value = updatedUser
+                    self?.operationState.value = .success(message)
+                case .failure(let error):
+                    self?.operationState.value = .failure(error)
                 }
             }
         }
@@ -298,148 +281,119 @@ class MVVMUserDetailViewModel: ObservableObject {
     
     /// 切换在线状态
     func toggleOnlineStatus() {
-        var updatedUser = user
-        updatedUser.isOnline.toggle()
-        updatedUser.lastLoginTime = Date()
-        updatedUser.loginCount += 1
-        
-        operationState = .loading
-        
-        userDataService.updateUser(updatedUser) { [weak self] result in
-            DispatchQueue.main.async {
-                if result.isSuccess {
-                    self?.user = updatedUser
-                    self?.operationState = .success(result.message)
-                } else {
-                    self?.operationState = .error(result.message)
-                }
-            }
-        }
-    }
-    
-    /// 清空操作状态
-    func clearOperationState() {
-        operationState = .idle
+        isOnline.value.toggle()
     }
     
     // MARK: - 私有方法
     
-    /// 设置编辑数据
-    private func setupEditingData() {
-        editingName = user.name
-        editingEmail = user.email
-        editingAvatar = user.avatar ?? ""
+    /// 验证邮箱格式
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
     }
 }
 
 // MARK: - 用户登录 ViewModel
 
-/// 用户登录 ViewModel
-class MVVMUserLoginViewModel: ObservableObject {
+/// 用户登录 ViewModel（使用自定义绑定）
+class MVVMUserLoginViewModel {
     
-    // MARK: - 属性
+    // MARK: - 绑定属性
+    let email = TwoWayBindable<String>("")
+    let password = TwoWayBindable<String>("")
+    let isLoading = Bindable<Bool>(false)
+    let operationState = Bindable<UserOperationState>(.idle)
+    let isLoginEnabled = Bindable<Bool>(false)
     
-    private let userDataService: UserDataServiceProtocol
-    
-    @Published var email: String = ""
-    @Published var password: String = ""
-    @Published var operationState: UserOperationState = .idle
-    @Published var isLoginEnabled: Bool = false
+    // MARK: - 私有属性
+    private let userService: UserDataServiceProtocol
     
     // MARK: - 初始化
+    init(userService: UserDataServiceProtocol = UserDataService()) {
+        self.userService = userService
+        setupBindings()
+    }
     
-    init(userDataService: UserDataServiceProtocol = UserDataService()) {
-        self.userDataService = userDataService
+    // MARK: - 绑定设置
+    private func setupBindings() {
+        // 监听邮箱和密码变化，更新登录按钮状态
+        email.bind { [weak self] _ in
+            self?.updateLoginButtonState()
+        }
         
-        // 监听输入变化
-        $email.combineLatest($password)
-            .map { email, password in
-                !email.isEmpty && !password.isEmpty
-            }
-            .assign(to: &$isLoginEnabled)
+        password.bind { [weak self] _ in
+            self?.updateLoginButtonState()
+        }
+    }
+    
+    private func updateLoginButtonState() {
+        let emailText = email.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let passwordText = password.value
+        let isEmailValid = !emailText.isEmpty
+        let isPasswordValid = passwordText.count >= 6
+        isLoginEnabled.value = isEmailValid && isPasswordValid
     }
     
     // MARK: - 公共方法
     
     /// 执行登录
     func login() {
-        guard isLoginEnabled else { return }
+        let emailText = email.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let passwordText = password.value
         
-        operationState = .loading
+        // 验证输入
+        if emailText.isEmpty {
+            operationState.value = .failure("请输入邮箱")
+            return
+        }
         
-        userDataService.loginUser(email: email, password: password) { [weak self] result in
+        if passwordText.isEmpty {
+            operationState.value = .failure("请输入密码")
+            return
+        }
+        
+        if !isValidEmail(emailText) {
+            operationState.value = .failure("邮箱格式不正确")
+            return
+        }
+        
+        if passwordText.count < 6 {
+            operationState.value = .failure("密码至少6位")
+            return
+        }
+        
+        isLoading.value = true
+        operationState.value = .loading
+        
+        userService.loginUser(email: emailText, password: passwordText) { [weak self] result in
             DispatchQueue.main.async {
-                if result.isSuccess {
-                    self?.operationState = .success(result.message)
-                } else {
-                    self?.operationState = .error(result.message)
+                self?.isLoading.value = false
+                switch result {
+                case .success(let message):
+                    self?.operationState.value = .success(message)
+                case .failure(let error):
+                    self?.operationState.value = .failure(error)
                 }
             }
         }
     }
     
-    /// 清空操作状态
-    func clearOperationState() {
-        operationState = .idle
+    /// 清除表单
+    func clearForm() {
+        email.value = ""
+        password.value = ""
+        operationState.value = .idle
     }
     
-    /// 重置表单
-    func resetForm() {
-        email = ""
-        password = ""
-        operationState = .idle
+    // MARK: - 私有方法
+    
+    /// 验证邮箱格式
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
     }
 }
 
-// MARK: - ViewModel 扩展
 
-extension MVVMUserListViewModel {
-    
-    /// 获取用户数量
-    var userCount: Int {
-        if case .loaded(let users) = listState {
-            return users.count
-        }
-        return 0
-    }
-    
-    /// 获取在线用户数量
-    var onlineUserCount: Int {
-        if case .loaded(let users) = listState {
-            return users.filter { $0.isOnline }.count
-        }
-        return 0
-    }
-    
-    /// 是否正在加载
-    var isLoading: Bool {
-        if case .loading = listState {
-            return true
-        }
-        return false
-    }
-    
-    /// 是否有错误
-    var hasError: Bool {
-        if case .error = listState {
-            return true
-        }
-        return false
-    }
-    
-    /// 错误信息
-    var errorMessage: String? {
-        if case .error(let message) = listState {
-            return message
-        }
-        return nil
-    }
-    
-    /// 是否为空列表
-    var isEmpty: Bool {
-        if case .empty = listState {
-            return true
-        }
-        return false
-    }
-}
