@@ -30,10 +30,10 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		6355A4322E98C036008075A5 /* Exceptions for "jiagou" folder in "jiagou" target */ = {
+		F4D5F7FF2EA5EA18002E295F /* Exceptions for "jiagou" folder in "jiagou" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				Resources/Info.plist,
 			);
 			target = 6355A4092E98C035008075A5 /* jiagou */;
 		};
@@ -43,7 +43,7 @@
 		6355A40C2E98C035008075A5 /* jiagou */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				6355A4322E98C036008075A5 /* Exceptions for "jiagou" folder in "jiagou" target */,
+				F4D5F7FF2EA5EA18002E295F /* Exceptions for "jiagou" folder in "jiagou" target */,
 			);
 			path = jiagou;
 			sourceTree = "<group>";
@@ -291,7 +291,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CY62DKKZTA;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = jiagou/Info.plist;
+				INFOPLIST_FILE = jiagou/Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -320,7 +320,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CY62DKKZTA;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = jiagou/Info.plist;
+				INFOPLIST_FILE = jiagou/Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;

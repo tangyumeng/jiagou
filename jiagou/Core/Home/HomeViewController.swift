@@ -39,7 +39,7 @@ class HomeViewController: UIViewController {
             subtitle: "并发控制 · 断点续传 · 后台下载 · 持久化",
             icon: "arrow.down.circle.fill",
             color: .systemBlue,
-            viewController: { ViewController() }
+            viewController: { DownloadManagerDemoViewController() }
         ),
         ArchitectureItem(
             title: "图片加载框架",

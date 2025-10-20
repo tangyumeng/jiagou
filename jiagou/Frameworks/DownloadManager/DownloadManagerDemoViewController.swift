@@ -1,13 +1,14 @@
 //
-//  ViewController.swift
+//  DownloadManagerDemoViewController.swift
 //  jiagou
 //
 //  Created by tangyumeng on 2025/10/10.
+//  Renamed and reorganized on 2025/10/20.
 //
 
 import UIKit
 
-class ViewController: UIViewController {
+class DownloadManagerDemoViewController: UIViewController {
     
     // MARK: - UI组件
     private lazy var tableView: UITableView = {
@@ -214,7 +215,7 @@ class ViewController: UIViewController {
 }
 
 // MARK: - UITableViewDataSource
-extension ViewController: UITableViewDataSource {
+extension DownloadManagerDemoViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return tasks.count
     }
@@ -231,7 +232,7 @@ extension ViewController: UITableViewDataSource {
 }
 
 // MARK: - UITableViewDelegate
-extension ViewController: UITableViewDelegate {
+extension DownloadManagerDemoViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
     }
@@ -256,7 +257,7 @@ extension ViewController: UITableViewDelegate {
 }
 
 // MARK: - DownloadManagerDelegate
-extension ViewController: DownloadManagerDelegate {
+extension DownloadManagerDemoViewController: DownloadManagerDelegate {
     func downloadManager(_ manager: DownloadManager, didUpdateTask task: DownloadTask) {
         // 由task的观察者回调处理
     }
