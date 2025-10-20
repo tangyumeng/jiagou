@@ -57,8 +57,8 @@ class ModuleManager {
     // MARK: - 获取模块
     
     /// 获取模块实例（单例，线程安全）
-    /// - Parameter type: 模块类型或协议类型
-    /// - Returns: 模块实例
+    /// - Parameter type: 模块类型或协议类型（例如 `UserModule.self` 或 `UserModuleProtocol.self`）
+    /// - Returns: 模块实例，找不到则返回 nil
     /// 
     /// 使用示例：
     /// ```
@@ -68,7 +68,7 @@ class ModuleManager {
     /// // 方式2：通过协议类型（在其他模块中使用，推荐⭐）
     /// let userModule = ModuleManager.shared.module(UserModuleProtocol.self)
     /// ```
-    func module<T: ModuleProtocol>(_ type: T.Type) -> T? {
+    func module<T>(_ type: T.Type) -> T? {
         var result: T?
         
         queue.sync { [weak self] in
@@ -76,18 +76,18 @@ class ModuleManager {
             
             // 遍历所有已注册的模块
             for (moduleName, moduleType) in self.modules {
-                // 检查模块是否实现了指定的协议/类型
-                if let matchedType = moduleType as? T.Type {
-                    // 从缓存获取实例
-                    if let instance = self.instances[moduleName] as? T {
-                        result = instance
+                // 若注册的模块类型可转换为目标协议/类型
+                if (moduleType as Any) is T.Type {
+                    // 命中模块后，优先从缓存取实例
+                    if let cached = self.instances[moduleName] as? T {
+                        result = cached
                         return
                     }
                     
-                    // 创建新实例
-                    let instance = matchedType.init()
-                    self.instances[moduleName] = instance
-                    result = instance
+                    // 未命中缓存则创建实例（通过 ModuleProtocol.Type 构造）
+                    let newInstance = moduleType.init()
+                    self.instances[moduleName] = newInstance
+                    result = newInstance as? T
                     print("📦 创建模块实例：\(moduleName)")
                     return
                 }

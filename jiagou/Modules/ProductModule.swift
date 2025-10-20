@@ -151,7 +151,7 @@ class ProductModule: ProductModuleProtocol {
         print("🔄 同步购物车...")
         
         // ✅ 通过协议类型获取 UserModule（无需 import UserModule）
-        guard let userModule = ModuleManager.shared.module(UserModule.self) else {
+        guard let userModule = ModuleManager.shared.module(UserModuleProtocol.self) else {
             print("⚠️ 无法获取 UserModule，跳过同步")
             return
         }
