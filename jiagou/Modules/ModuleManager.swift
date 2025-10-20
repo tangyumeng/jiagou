@@ -104,25 +104,25 @@ class ModuleManager {
     
     /// 打开页面（Push）
     /// - Parameters:
-    ///   - moduleType: 模块类型
+    ///   - moduleType: 模块类型或协议类型（例如 `ProductModule.self` 或 `ProductModuleProtocol.self`）
     ///   - parameters: 参数字典
     ///   - source: 源 ViewController
     ///   - animated: 是否动画
     /// - Returns: 是否成功
     @discardableResult
-    func openPage<T: PageModuleProtocol>(
+    func openPage<T>(
         _ moduleType: T.Type,
         parameters: [String: Any] = [:],
         from source: UIViewController? = nil,
         animated: Bool = true
     ) -> Bool {
         
-        print("📤 打开页面：\(moduleType.moduleName)")
+        print("📤 打开页面：\(moduleType)")
         print("📝 参数：\(parameters)")
         
         // 获取模块实例
-        guard let module = self.module(moduleType) else {
-            print("❌ 获取模块失败")
+        guard let module = self.module(moduleType) as? PageModuleProtocol else {
+            print("❌ 获取模块失败或模块不是 PageModuleProtocol")
             return false
         }
         
@@ -152,14 +152,14 @@ class ModuleManager {
     
     /// 打开页面（Present）
     /// - Parameters:
-    ///   - moduleType: 模块类型
+    ///   - moduleType: 模块类型或协议类型（例如 `ProductModule.self` 或 `ProductModuleProtocol.self`）
     ///   - parameters: 参数字典
     ///   - source: 源 ViewController
     ///   - animated: 是否动画
     ///   - completion: 完成回调
     /// - Returns: 是否成功
     @discardableResult
-    func presentPage<T: PageModuleProtocol>(
+    func presentPage<T>(
         _ moduleType: T.Type,
         parameters: [String: Any] = [:],
         from source: UIViewController? = nil,
@@ -167,9 +167,10 @@ class ModuleManager {
         completion: (() -> Void)? = nil
     ) -> Bool {
         
-        print("📤 弹出页面：\(moduleType.moduleName)")
+        print("📤 弹出页面：\(moduleType)")
         
-        guard let module = self.module(moduleType) else {
+        guard let module = self.module(moduleType) as? PageModuleProtocol else {
+            print("❌ 获取模块失败或模块不是 PageModuleProtocol")
             return false
         }
         

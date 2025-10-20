@@ -89,6 +89,13 @@ class HomeViewController: UIViewController {
             icon: "link.circle.fill",
             color: .systemIndigo,
             viewController: { ModuleDemoViewController() }
+        ),
+        ArchitectureItem(
+            title: "ModuleManager 演示",
+            subtitle: "presentPage · openPage · 协议类型 · 模块通信",
+            icon: "square.grid.3x3.fill",
+            color: .systemBrown,
+            viewController: { ModuleManagerDemoViewController() }
         )
     ]
     
@@ -271,7 +278,7 @@ class HomeHeaderView: UIView {
     
     private let subtitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "7个热门框架 · 面试必备 · 实战演练"
+        label.text = "9个架构演示 · 面试必备 · 实战演练"
         label.font = .systemFont(ofSize: 15, weight: .regular)
         label.textColor = .secondaryLabel
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -280,7 +287,7 @@ class HomeHeaderView: UIView {
     
     private let statsLabel: UILabel = {
         let label = UILabel()
-        label.text = "📦 下载 · 🖼️ 图片 · 🗺️ URL路由 · 📝 日志 · 📢 EventBus · 🏗️ MVVM · 🔗 协议路由"
+        label.text = "📦 下载 · 🖼️ 图片 · 🗺️ URL路由 · 📝 日志 · 📢 EventBus · 🏗️ MVVM · MVP · 🔗 协议路由 · ModuleManager"
         label.font = .systemFont(ofSize: 13, weight: .regular)
         label.textColor = .tertiaryLabel
         label.numberOfLines = 0
